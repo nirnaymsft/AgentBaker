@@ -108,10 +108,18 @@ if [[ $(isARM64) == 1 ]]; then
   fi
 fi
 
+echo "===== Before chrony Pull =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== Before chrony Pull End =====" >> ${VHD_LOGS_FILEPATH}
+
 if [[ "${UBUNTU_RELEASE}" == "18.04" || "${UBUNTU_RELEASE}" == "20.04" || "${UBUNTU_RELEASE}" == "22.04" ]]; then
   overrideNetworkConfig || exit 1
   disableNtpAndTimesyncdInstallChrony || exit 1
 fi
+
+echo "===== After chrony Pull =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After chrony Pull End =====" >> ${VHD_LOGS_FILEPATH}
 
 CONTAINERD_SERVICE_DIR="/etc/systemd/system/containerd.service.d"
 mkdir -p "${CONTAINERD_SERVICE_DIR}"
@@ -141,9 +149,16 @@ if [[ $OS == $MARINER_OS_NAME ]]; then
       enableDNFAutomatic
     fi
 fi
+echo "===== After Mariner Specific =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After Mariner Specific End =====" >> ${VHD_LOGS_FILEPATH}
 
 downloadContainerdWasmShims
 echo "  - krustlet ${CONTAINERD_WASM_VERSION}" >> ${VHD_LOGS_FILEPATH}
+
+echo "===== Before containerd Pull =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== Before containerd Pull End =====" >> ${VHD_LOGS_FILEPATH}
 
 if [[ ${CONTAINER_RUNTIME:-""} == "containerd" ]]; then
   echo "VHD will be built with containerd as the container runtime"
@@ -192,6 +207,14 @@ else
   cliTool="docker"
 fi
 
+echo "===== After containerd Pull =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After containerd Pull End =====" >> ${VHD_LOGS_FILEPATH}
+
+echo "===== Before Runc Pull =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== Before Runc Pull End =====" >> ${VHD_LOGS_FILEPATH}
+
 INSTALLED_RUNC_VERSION=$(runc --version | head -n1 | sed 's/runc version //')
 echo "  - runc version ${INSTALLED_RUNC_VERSION}" >> ${VHD_LOGS_FILEPATH}
 
@@ -214,6 +237,14 @@ if [[ $OS == $UBUNTU_OS_NAME ]]; then
     echo "  - [cached] runc ${RUNC_VERSION}" >> ${VHD_LOGS_FILEPATH}
   done
 fi
+
+echo "===== After Runc Pull =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After Runc Pull End =====" >> ${VHD_LOGS_FILEPATH}
+
+echo "===== Before GPU Pull =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== Before GPU Pull End =====" >> ${VHD_LOGS_FILEPATH}
 
 if [[ $OS == $UBUNTU_OS_NAME && $(isARM64) != 1 ]]; then  # no ARM64 SKU with GPU now
   gpu_action="copy"
@@ -240,6 +271,9 @@ if [[ $OS == $UBUNTU_OS_NAME && $(isARM64) != 1 ]]; then  # no ARM64 SKU with GP
     fi
   fi
 fi
+echo "===== After GPU Pull =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After GPU Pull End =====" >> ${VHD_LOGS_FILEPATH}
 
 if [ "${CONTAINER_RUNTIME:=}" == "containerd" ]; then
     systemctlEnableAndStart containerd-monitor.timer || exit $ERR_SYSTEMCTL_START_FAIL
@@ -249,8 +283,14 @@ fi
 
 ls -ltr /opt/gpu/* >> ${VHD_LOGS_FILEPATH}
 
+echo "===== Before installBpftrace Pull =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== Before installBpftrace Pull End =====" >> ${VHD_LOGS_FILEPATH}
 installBpftrace
 echo "  - bpftrace" >> ${VHD_LOGS_FILEPATH}
+echo "===== After installBpftrace Pull =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After installBpftrace Pull End =====" >> ${VHD_LOGS_FILEPATH}
 
 cat << EOF >> ${VHD_LOGS_FILEPATH}
   - nvidia-docker2=${NVIDIA_DOCKER_VERSION}
@@ -259,11 +299,17 @@ cat << EOF >> ${VHD_LOGS_FILEPATH}
   - nvidia-fabricmanager=${GPU_DV}
 EOF
 
+echo "===== Before installBcc Pull =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== Before installBcc Pull End =====" >> ${VHD_LOGS_FILEPATH}
 installBcc
 cat << EOF >> ${VHD_LOGS_FILEPATH}
   - bcc-tools
   - libbcc-examples
 EOF
+echo "===== After installBcc Pull =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After installBcc Pull End =====" >> ${VHD_LOGS_FILEPATH}
 
 echo "${CONTAINER_RUNTIME} images pre-pulled:" >> ${VHD_LOGS_FILEPATH}
 
@@ -496,6 +542,10 @@ for NGINX_VERSION in ${NGINX_VERSIONS}; do
     echo "  - ${CONTAINER_IMAGE}" >> ${VHD_LOGS_FILEPATH}
 done
 
+echo "===== After nginx =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After nginx End =====" >> ${VHD_LOGS_FILEPATH}
+
 # this is used by kube-proxy and need to cover previously supported version for VMAS scale up scenario
 # So keeping as many versions as we can - those unsupported version can be removed when we don't have enough space
 # NOTE that we keep multiple files per k8s patch version as kubeproxy version is decided by CCP.
@@ -521,6 +571,10 @@ for KUBE_PROXY_IMAGE_VERSION in ${KUBE_PROXY_IMAGE_VERSIONS}; do
   echo "  - ${CONTAINER_IMAGE}" >>${VHD_LOGS_FILEPATH}
 done
 
+echo "===== After kube-proxy =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After kube-proxy End =====" >> ${VHD_LOGS_FILEPATH}
+
 if [[ $OS == $UBUNTU_OS_NAME ]]; then
   # remove snapd, which is not used by container stack
   apt_get_purge 20 30 120 snapd || exit 1
@@ -533,6 +587,10 @@ if [[ $OS == $UBUNTU_OS_NAME ]]; then
   # multi-user.target usually start at the end of the boot sequence
   sed -i 's/After=network-online.target/After=multi-user.target/g' /lib/systemd/system/motd-news.service
 fi
+
+echo "===== After apt_get_purge =====" >> ${VHD_LOGS_FILEPATH}
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After apt_get_purge End =====" >> ${VHD_LOGS_FILEPATH}
 
 # kubelet and kubectl
 # need to cover previously supported version for VMAS scale up scenario
