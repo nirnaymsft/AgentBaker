@@ -41,17 +41,17 @@ APT::Periodic::AutocleanInterval "0";
 APT::Periodic::Unattended-Upgrade "0";
 EOF
 fi
-echo "===== Before lsblk ====="
+echo "===== Before lsblk =====" >> ${VHD_LOGS_FILEPATH}
 lsblk >> ${VHD_LOGS_FILEPATH}
-echo "===== After lsblk ====="
+echo "===== After lsblk =====" >> ${VHD_LOGS_FILEPATH}
 
-echo "===== Before Additional Package Installs ====="
+echo "===== Before Additional Package Installs =====" >> ${VHD_LOGS_FILEPATH}
 df -BM >> ${VHD_LOGS_FILEPATH}
-echo "===== BeforeAdditional Package Installs End ====="
+echo "===== BeforeAdditional Package Installs End =====" >> ${VHD_LOGS_FILEPATH}
 installDeps
-echo "===== After Additional Package Installs ====="
+echo "===== After Additional Package Installs =====" >> ${VHD_LOGS_FILEPATH}
 df -BM >> ${VHD_LOGS_FILEPATH}
-echo "===== After Additional Package Installs End ====="
+echo "===== After Additional Package Installs End =====" >> ${VHD_LOGS_FILEPATH}
 cat << EOF >> ${VHD_LOGS_FILEPATH}
   - apt-transport-https
   - blobfuse=1.4.4
@@ -271,9 +271,9 @@ string_replace() {
   echo ${1//\*/$2}
 }
 
-echo "===== Before ContainerImages Pull ====="
+echo "===== Before ContainerImages Pull =====" >> ${VHD_LOGS_FILEPATH}
 df -BM >> ${VHD_LOGS_FILEPATH}
-echo "===== Before ContainerImages Pull End ====="
+echo "===== Before ContainerImages Pull End =====" >> ${VHD_LOGS_FILEPATH}
 
 ContainerImages=$(jq ".ContainerImages" $COMPONENTS_FILEPATH | jq .[] --monochrome-output --compact-output)
 for imageToBePulled in ${ContainerImages[*]}; do
@@ -303,9 +303,9 @@ for imageToBePulled in ${ContainerImages[*]}; do
   done
 done
 
-echo "===== After ContainerImages Pull ====="
+echo "===== After ContainerImages Pull =====" >> ${VHD_LOGS_FILEPATH}
 df -BM >> ${VHD_LOGS_FILEPATH}
-echo "===== After ContainerImages Pull End ====="
+echo "===== After ContainerImages Pull End =====" >> ${VHD_LOGS_FILEPATH}
 
 watcher=$(jq '.ContainerImages[] | select(.downloadURL | contains("aks-node-ca-watcher"))' $COMPONENTS_FILEPATH)
 watcherBaseImg=$(echo $watcher | jq -r .downloadURL)
@@ -325,9 +325,9 @@ else
     retagContainerImage "docker" ${watcherFullImg} ${watcherStaticImg}
 fi
 
-echo "===== Before unpackAzureCNI ====="
+echo "===== Before unpackAzureCNI =====" >> ${VHD_LOGS_FILEPATH}
 df -BM >> ${VHD_LOGS_FILEPATH}
-echo "===== Before unpackAzureCNI End ====="
+echo "===== Before unpackAzureCNI End =====" >> ${VHD_LOGS_FILEPATH}
 
 # doing this at vhd allows CSE to be faster with just mv
 unpackAzureCNI() {
@@ -394,18 +394,18 @@ for CNI_PLUGIN_VERSION in $CNI_PLUGIN_VERSIONS; do
     echo "  - CNI plugin version ${CNI_PLUGIN_VERSION}" >> ${VHD_LOGS_FILEPATH}
 done
 
-echo "===== After unpackAzureCNI ====="
+echo "===== After unpackAzureCNI =====" >> ${VHD_LOGS_FILEPATH}
 df -BM >> ${VHD_LOGS_FILEPATH}
-echo "===== After unpackAzureCNI End ====="
+echo "===== After unpackAzureCNI End =====" >> ${VHD_LOGS_FILEPATH}
 
 # IPv6 nftables, only Ubuntu for now
 if [[ $OS == $UBUNTU_OS_NAME ]]; then
   systemctlEnableAndStart ipv6_nftables || exit 1
 fi
 
-echo "===== Before GPU stuff ====="
+echo "===== Before GPU stuff =====" >> ${VHD_LOGS_FILEPATH}
 df -BM >> ${VHD_LOGS_FILEPATH}
-echo "===== Before GPU stuff End ====="
+echo "===== Before GPU stuff End =====" >> ${VHD_LOGS_FILEPATH}
 
 if [[ $OS == $UBUNTU_OS_NAME && $(isARM64) != 1 ]]; then  # no ARM64 SKU with GPU now
 NVIDIA_DEVICE_PLUGIN_VERSIONS="
@@ -437,13 +437,13 @@ if grep -q "fullgpu" <<< "$FEATURE_FLAGS" && grep -q "gpudaemon" <<< "$FEATURE_F
   systemctlEnableAndStart nvidia-device-plugin || exit 1
 fi
 
-echo "===== After GPU stuff ====="
+echo "===== After GPU stuff =====" >> ${VHD_LOGS_FILEPATH}
 df -BM >> ${VHD_LOGS_FILEPATH}
-echo "===== After GPU stuff End ====="
+echo "===== After GPU stuff End =====" >> ${VHD_LOGS_FILEPATH}
 
-echo "===== Before SGX stuff ====="
+echo "===== Before SGX stuff =====" >> ${VHD_LOGS_FILEPATH}
 df -BM >> ${VHD_LOGS_FILEPATH}
-echo "===== Before SGX stuff End ====="
+echo "===== Before SGX stuff End =====" >> ${VHD_LOGS_FILEPATH}
 
 installSGX=${SGX_INSTALL:-"False"}
 if [[ ${installSGX} == "True" ]]; then
@@ -481,9 +481,9 @@ if [[ ${installSGX} == "True" ]]; then
 fi
 fi
 
-echo "===== After SGX stuff ====="
+echo "===== After SGX stuff =====" >> ${VHD_LOGS_FILEPATH}
 df -BM >> ${VHD_LOGS_FILEPATH}
-echo "===== After SGX stuff End ====="
+echo "===== After SGX stuff End =====" >> ${VHD_LOGS_FILEPATH}
 
 NGINX_VERSIONS="1.13.12-alpine"
 for NGINX_VERSION in ${NGINX_VERSIONS}; do
@@ -551,8 +551,8 @@ for PATCHED_KUBE_BINARY_VERSION in ${KUBE_BINARY_VERSIONS}; do
   extractKubeBinaries $KUBERNETES_VERSION "https://acs-mirror.azureedge.net/kubernetes/v${PATCHED_KUBE_BINARY_VERSION}/binaries/kubernetes-node-linux-${CPU_ARCH}.tar.gz"
 done
 
-echo "===== InstallDeps Finished ====="
+echo "===== InstallDeps Finished =====" >> ${VHD_LOGS_FILEPATH}
 df -BM >> ${VHD_LOGS_FILEPATH}
-echo "===== InstallDeps Finished End ====="
+echo "===== InstallDeps Finished End =====" >> ${VHD_LOGS_FILEPATH}
 
 echo "install-dependencies step completed successfully"
