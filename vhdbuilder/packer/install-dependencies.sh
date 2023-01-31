@@ -41,8 +41,17 @@ APT::Periodic::AutocleanInterval "0";
 APT::Periodic::Unattended-Upgrade "0";
 EOF
 fi
+echo "===== Before lsblk ====="
+lsblk >> ${VHD_LOGS_FILEPATH}
+echo "===== After lsblk ====="
 
+echo "===== Before Additional Package Installs ====="
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== BeforeAdditional Package Installs End ====="
 installDeps
+echo "===== After Additional Package Installs ====="
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After Additional Package Installs End ====="
 cat << EOF >> ${VHD_LOGS_FILEPATH}
   - apt-transport-https
   - blobfuse=1.4.4
@@ -262,6 +271,10 @@ string_replace() {
   echo ${1//\*/$2}
 }
 
+echo "===== Before ContainerImages Pull ====="
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== Before ContainerImages Pull End ====="
+
 ContainerImages=$(jq ".ContainerImages" $COMPONENTS_FILEPATH | jq .[] --monochrome-output --compact-output)
 for imageToBePulled in ${ContainerImages[*]}; do
   downloadURL=$(echo "${imageToBePulled}" | jq .downloadURL -r)
@@ -290,6 +303,10 @@ for imageToBePulled in ${ContainerImages[*]}; do
   done
 done
 
+echo "===== After ContainerImages Pull ====="
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After ContainerImages Pull End ====="
+
 watcher=$(jq '.ContainerImages[] | select(.downloadURL | contains("aks-node-ca-watcher"))' $COMPONENTS_FILEPATH)
 watcherBaseImg=$(echo $watcher | jq -r .downloadURL)
 watcherVersion=$(echo $watcher | jq -r .multiArchVersions[0])
@@ -307,6 +324,10 @@ if [[ "${CONTAINER_RUNTIME}" == "containerd" ]]; then
 else
     retagContainerImage "docker" ${watcherFullImg} ${watcherStaticImg}
 fi
+
+echo "===== Before unpackAzureCNI ====="
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== Before unpackAzureCNI End ====="
 
 # doing this at vhd allows CSE to be faster with just mv
 unpackAzureCNI() {
@@ -373,10 +394,18 @@ for CNI_PLUGIN_VERSION in $CNI_PLUGIN_VERSIONS; do
     echo "  - CNI plugin version ${CNI_PLUGIN_VERSION}" >> ${VHD_LOGS_FILEPATH}
 done
 
+echo "===== After unpackAzureCNI ====="
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After unpackAzureCNI End ====="
+
 # IPv6 nftables, only Ubuntu for now
 if [[ $OS == $UBUNTU_OS_NAME ]]; then
   systemctlEnableAndStart ipv6_nftables || exit 1
 fi
+
+echo "===== Before GPU stuff ====="
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== Before GPU stuff End ====="
 
 if [[ $OS == $UBUNTU_OS_NAME && $(isARM64) != 1 ]]; then  # no ARM64 SKU with GPU now
 NVIDIA_DEVICE_PLUGIN_VERSIONS="
@@ -407,6 +436,14 @@ if grep -q "fullgpu" <<< "$FEATURE_FLAGS" && grep -q "gpudaemon" <<< "$FEATURE_F
 
   systemctlEnableAndStart nvidia-device-plugin || exit 1
 fi
+
+echo "===== After GPU stuff ====="
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After GPU stuff End ====="
+
+echo "===== Before SGX stuff ====="
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== Before SGX stuff End ====="
 
 installSGX=${SGX_INSTALL:-"False"}
 if [[ ${installSGX} == "True" ]]; then
@@ -443,6 +480,10 @@ if [[ ${installSGX} == "True" ]]; then
     done
 fi
 fi
+
+echo "===== After SGX stuff ====="
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== After SGX stuff End ====="
 
 NGINX_VERSIONS="1.13.12-alpine"
 for NGINX_VERSION in ${NGINX_VERSIONS}; do
@@ -509,5 +550,9 @@ for PATCHED_KUBE_BINARY_VERSION in ${KUBE_BINARY_VERSIONS}; do
   KUBERNETES_VERSION=$(echo ${PATCHED_KUBE_BINARY_VERSION} | cut -d"_" -f1 | cut -d"-" -f1 | cut -d"." -f1,2,3)
   extractKubeBinaries $KUBERNETES_VERSION "https://acs-mirror.azureedge.net/kubernetes/v${PATCHED_KUBE_BINARY_VERSION}/binaries/kubernetes-node-linux-${CPU_ARCH}.tar.gz"
 done
+
+echo "===== InstallDeps Finished ====="
+df -BM >> ${VHD_LOGS_FILEPATH}
+echo "===== InstallDeps Finished End ====="
 
 echo "install-dependencies step completed successfully"
