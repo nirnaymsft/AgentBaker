@@ -9,8 +9,6 @@ copyPackerFiles() {
   ETC_ISSUE_CONFIG_DEST=/etc/issue
   ETC_ISSUE_NET_CONFIG_SRC=/home/packer/etc-issue.net
   ETC_ISSUE_NET_CONFIG_DEST=/etc/issue.net
-  SSHD_CONFIG_SRC=/home/packer/sshd_config
-  SSHD_CONFIG_DEST=/etc/ssh/sshd_config
   MODPROBE_CIS_SRC=/home/packer/modprobe-CIS.conf
   MODPROBE_CIS_DEST=/etc/modprobe.d/CIS.conf
   PWQUALITY_CONF_SRC=/home/packer/pwquality-CIS.conf
@@ -182,10 +180,35 @@ copyPackerFiles() {
 
   NOTICE_SRC=/home/packer/NOTICE.txt
   NOTICE_DEST=/NOTICE.txt
-  if [[ ${UBUNTU_RELEASE} == "16.04" ]]; then
-    SSHD_CONFIG_SRC=/home/packer/sshd_config_1604
-  elif [[ ${UBUNTU_RELEASE} == "18.04" && ${ENABLE_FIPS,,} == "true" ]]; then
-    SSHD_CONFIG_SRC=/home/packer/sshd_config_1804_fips
+
+  # OPTION 1: If the base image does not have an sshd_config, use the default.
+  # This has the advantage that no matter what we have an sshd_config in the end.
+  SSHD_CONFIG_DEST=/etc/ssh/sshd_config
+  if [ ! -f $SSHD_CONFIG_DEST ]; then
+    SSHD_CONFIG_SRC=/home/packer/sshd_config
+    SSHD_CONFIG_DEST=/etc/ssh/sshd_config
+    if [[ ${UBUNTU_RELEASE} == "16.04" ]]; then
+        SSHD_CONFIG_SRC=/home/packer/sshd_config_1604
+    elif [[ ${UBUNTU_RELEASE} == "18.04" && ${ENABLE_FIPS,,} == "true" ]]; then
+        SSHD_CONFIG_SRC=/home/packer/sshd_config_1804_fips
+    fi
+
+    cpAndMode $SSHD_CONFIG_SRC $SSHD_CONFIG_DEST 644
+  fi
+
+  # OPTION 2: Only write file for Ubuntu images.
+  # This has the advantage that the sshd_config is only overwritten or the release that we think it was
+  # initially intended for.
+  if [[ -n "${UBUNTU_RELEASE}" ]]; then
+    SSHD_CONFIG_SRC=/home/packer/sshd_config
+    SSHD_CONFIG_DEST=/etc/ssh/sshd_config
+    if [[ ${UBUNTU_RELEASE} == "16.04" ]]; then
+        SSHD_CONFIG_SRC=/home/packer/sshd_config_1604
+    elif [[ ${UBUNTU_RELEASE} == "18.04" && ${ENABLE_FIPS,,} == "true" ]]; then
+        SSHD_CONFIG_SRC=/home/packer/sshd_config_1804_fips
+    fi
+
+    cpAndMode $SSHD_CONFIG_SRC $SSHD_CONFIG_DEST 644
   fi
 
   cpAndMode $AKS_LOGROTATE_CONF_SRC $AKS_LOGROTATE_CONF_DEST 644
@@ -209,7 +232,6 @@ copyPackerFiles() {
   cpAndMode $RSYSLOG_CONFIG_SRC $RSYSLOG_CONFIG_DEST 644
   cpAndMode $ETC_ISSUE_CONFIG_SRC $ETC_ISSUE_CONFIG_DEST 644
   cpAndMode $ETC_ISSUE_NET_CONFIG_SRC $ETC_ISSUE_NET_CONFIG_DEST 644
-  cpAndMode $SSHD_CONFIG_SRC $SSHD_CONFIG_DEST 644
   cpAndMode $MODPROBE_CIS_SRC $MODPROBE_CIS_DEST 644
   cpAndMode $PWQUALITY_CONF_SRC $PWQUALITY_CONF_DEST 600
   cpAndMode $PAM_D_COMMON_AUTH_SRC $PAM_D_COMMON_AUTH_DEST 644
