@@ -205,6 +205,13 @@ if [[ $OS == $UBUNTU_OS_NAME ]]; then
   done
 fi
 
+sleep 5
+
+systemctl status containerd
+journalctl --no-pager -u containerd -n 500
+
+sleep 5
+
 if [[ $OS == $UBUNTU_OS_NAME && $(isARM64) != 1 ]]; then  # no ARM64 SKU with GPU now
   gpu_action="copy"
   export NVIDIA_DRIVER_IMAGE_TAG="cuda-510.47.03-${NVIDIA_DRIVER_IMAGE_SHA}"
