@@ -21,7 +21,7 @@ type Route struct {
 type Routes []Route
 
 // NewRouter returns a new router with defaults.
-func (api *APIServer) NewRouter(ctx context.Context) *mux.Router {
+func (api *APIServer) NewRouter(_ context.Context) *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 
 	router.
@@ -65,6 +65,7 @@ func recoveryHandler() mux.MiddlewareFunc {
 
 func timeoutHandler() mux.MiddlewareFunc {
 	return func(h http.Handler) http.Handler {
-		return http.TimeoutHandler(h, time.Second*30, "")
+		const timeout = 30 * time.Second
+		return http.TimeoutHandler(h, timeout, "")
 	}
 }
