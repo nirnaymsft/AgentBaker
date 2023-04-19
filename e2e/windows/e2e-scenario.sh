@@ -130,6 +130,8 @@ jq -s '.[0] * .[1]' $WINDOWS_E2E_IMAGE-nodebootstrapping_config_for_windows.json
 
 go test -tags bash_e2e -run TestE2EWindows
 
+cat scenarios/$SCENARIO_NAME/$WINDOWS_E2E_IMAGE-$SCENARIO_NAME-cloud-init.txt
+
 MC_WIN_VMSS_NAME=$(az vmss list -g $MC_RESOURCE_GROUP_NAME --query "[?contains(name, 'winnp')]" -ojson | jq -r '.[0].name')
 VMSS_RESOURCE_Id=$(az resource show --resource-group $MC_RESOURCE_GROUP_NAME --name $MC_WIN_VMSS_NAME --resource-type Microsoft.Compute/virtualMachineScaleSets --query id --output tsv)
 
