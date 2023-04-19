@@ -177,8 +177,6 @@ func (t *TemplateGenerator) getSingleLine(textFilename string, profile interface
 }
 
 // getTemplateFuncMap returns the general purpose template func map from getContainerServiceFuncMap.
-//
-//nolint:gocognit
 func getBakerFuncMap(config *datamodel.NodeBootstrappingConfiguration, params paramsMap, variables paramsMap) template.FuncMap {
 	funcMap := getContainerServiceFuncMap(config)
 
@@ -321,12 +319,17 @@ func validateAndSetWindowsNodeBootstrappingConfiguration(config *datamodel.NodeB
 		config.KubeletConfig["--bootstrap-kubeconfig"] = "c:\\k\\bootstrap-config"
 		config.KubeletConfig["--cert-dir"] = "c:\\k\\pki"
 	}
+	fmt.Println("Enter validate and set windows nodebootstrapping configuration")
 	if config.KubeletConfig != nil {
+		fmt.Println("kubelet config is not null")
 		kubeletFlags := config.KubeletConfig
 		delete(kubeletFlags, "--dynamic-config-dir")
+		fmt.Printf("{\"OrchestratorVersion\": \"%s\"}", config.ContainerService.Properties.OrchestratorProfile.OrchestratorVersion)
 		if IsKubernetesVersionGe(config.ContainerService.Properties.OrchestratorProfile.OrchestratorVersion, "1.24.0") {
+			fmt.Println("remove feature gate string DynamicKubeletConfig")
 			kubeletFlags["--feature-gates"] = removeFeatureGateString(kubeletFlags["--feature-gates"], "DynamicKubeletConfig")
 		} else if IsKubernetesVersionGe(config.ContainerService.Properties.OrchestratorProfile.OrchestratorVersion, "1.11.0") {
+			fmt.Println("add feature gate string DynamicKubeletConfig")
 			kubeletFlags["--feature-gates"] = addFeatureGateString(kubeletFlags["--feature-gates"], "DynamicKubeletConfig", false)
 		}
 	}
@@ -335,7 +338,6 @@ func validateAndSetWindowsNodeBootstrappingConfiguration(config *datamodel.NodeB
 // getContainerServiceFuncMap returns all functions used in template generation.
 /* These funcs are a thin wrapper for template generation operations,
 all business logic is implemented in the underlying func. */
-//nolint:funlen,gocognit,nolintlint
 func getContainerServiceFuncMap(config *datamodel.NodeBootstrappingConfiguration) template.FuncMap {
 	cs := config.ContainerService
 	profile := config.AgentPoolProfile
