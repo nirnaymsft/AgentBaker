@@ -3,7 +3,7 @@
     "properties": {
       "orchestratorProfile": {
         "orchestratorType": "Kubernetes",
-        "orchestratorVersion": "1.23.12",
+        "orchestratorVersion": "1.26.0",
         "kubernetesConfig": {
           "networkPlugin": "azure",
           "loadBalancerSku": "Standard",
@@ -61,7 +61,7 @@
     }
   },
   "K8sComponents": {
-    "WindowsPackageURL": "https://acs-mirror.azureedge.net/kubernetes/v1.23.12/windowszip/v1.23.12-1int.zip"
+    "WindowsPackageURL": "https://acs-mirror.azureedge.net/kubernetes/v1.26.0/windowszip/v1.26.0-1int.zip"
   },
   "AgentPoolProfile": {
     "name": "winnp",
