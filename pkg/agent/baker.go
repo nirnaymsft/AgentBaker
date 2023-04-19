@@ -324,7 +324,7 @@ func validateAndSetWindowsNodeBootstrappingConfiguration(config *datamodel.NodeB
 		fmt.Println("kubelet config is not null")
 		kubeletFlags := config.KubeletConfig
 		delete(kubeletFlags, "--dynamic-config-dir")
-		fmt.Printf("{\"OrchestratorVersion\": \"%s\"}", config.ContainerService.Properties.OrchestratorProfile.OrchestratorVersion)
+		fmt.Printf("{\"OrchestratorVersion\": \"%s\"}\n", config.ContainerService.Properties.OrchestratorProfile.OrchestratorVersion)
 		if IsKubernetesVersionGe(config.ContainerService.Properties.OrchestratorProfile.OrchestratorVersion, "1.24.0") {
 			fmt.Println("remove feature gate string DynamicKubeletConfig")
 			kubeletFlags["--feature-gates"] = removeFeatureGateString(kubeletFlags["--feature-gates"], "DynamicKubeletConfig")
@@ -332,6 +332,8 @@ func validateAndSetWindowsNodeBootstrappingConfiguration(config *datamodel.NodeB
 			fmt.Println("add feature gate string DynamicKubeletConfig")
 			kubeletFlags["--feature-gates"] = addFeatureGateString(kubeletFlags["--feature-gates"], "DynamicKubeletConfig", false)
 		}
+		fmt.Printf("kubeletFlags: %s\n", kubeletFlags["--feature-gates"])
+		fmt.Printf("config.KubeletConfig: %s\n", config.KubeletConfig["--feature-gates"])
 	}
 }
 
